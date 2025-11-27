@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { UploadSection } from './components/UploadSection';
 import { Dashboard } from './components/Dashboard';
 import { ParsedTransaction, ViewMode } from './types';
 import { processStatementWithGemini } from './services/geminiService';
+import { INITIAL_PROJECTS } from './data/projects';
 import { LayoutDashboard } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [projects, setProjects] = useState<string[]>(['Website Redesign', 'Office Renovation', 'Q3 Marketing', 'Team Offsite']);
+  // Initialize from localStorage if available, otherwise use the empty default from code
+  const [projects, setProjects] = useState<string[]>(() => {
+    const saved = localStorage.getItem('statement_ai_projects');
+    return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
+  });
+
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.UPLOAD);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
+
+  // Persist project changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('statement_ai_projects', JSON.stringify(projects));
+  }, [projects]);
 
   const handleProcess = async (csvContent: string) => {
     setIsProcessing(true);

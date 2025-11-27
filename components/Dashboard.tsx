@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ParsedTransaction } from '../types';
-import { ArrowLeft, Wallet, Building2, FolderKanban, Filter, Calculator } from 'lucide-react';
+import { ArrowLeft, Wallet, Building2, FolderKanban, Filter, Calculator, Download } from 'lucide-react';
 
 interface DashboardProps {
   transactions: ParsedTransaction[];
@@ -92,6 +92,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
     setSelectedIndices(newSet);
   };
 
+  const handleExport = () => {
+    const headers = ['Date', 'Description', 'Supplier', 'Project', 'Amount (AUD)'];
+    const rows = filteredTransactions.map(t => [
+      t.date || '',
+      `"${(t.originalDescription || '').replace(/"/g, '""')}"`,
+      `"${(t.supplier || '').replace(/"/g, '""')}"`,
+      `"${(t.project || '').replace(/"/g, '""')}"`,
+      t.amount.toFixed(2)
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `statement_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header Stats */}
@@ -104,7 +129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
             <span className="text-slate-500 font-medium">Total Spend</span>
           </div>
           <p className="text-2xl font-bold text-slate-800">
-            ${summary.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            {summary.total.toLocaleString(undefined, { style: 'currency', currency: 'AUD' })}
           </p>
         </div>
         
@@ -157,13 +182,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
             Group by Project
           </button>
         </div>
-        <button
-          onClick={onReset}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium px-4 py-2 hover:bg-slate-50 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Upload New File
-        </button>
+        
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleExport}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export Excel
+          </button>
+          <button
+            onClick={onReset}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium px-4 py-2 hover:bg-slate-50 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            New File
+          </button>
+        </div>
       </div>
 
       {/* Unified Table View */}
@@ -184,10 +219,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
                 }}
                 className="appearance-none bg-white border border-slate-300 hover:border-indigo-400 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-8 py-2.5 shadow-sm transition-all"
               >
-                <option value="All">All {activeTab === 'supplier' ? 'Suppliers' : 'Projects'} ({summary.total.toLocaleString(undefined, {style: 'currency', currency: 'USD'})})</option>
+                <option value="All">All {activeTab === 'supplier' ? 'Suppliers' : 'Projects'} ({summary.total.toLocaleString(undefined, {style: 'currency', currency: 'AUD'})})</option>
                 {filterOptions.map((opt) => (
                   <option key={opt.name} value={opt.name}>
-                    {opt.name} ({opt.value.toLocaleString(undefined, {style: 'currency', currency: 'USD'})})
+                    {opt.name} ({opt.value.toLocaleString(undefined, {style: 'currency', currency: 'AUD'})})
                   </option>
                 ))}
               </select>
@@ -203,13 +238,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
                 {filterValue === 'All' ? 'Total Amount' : 'Filtered Total'}
               </span>
               <span className="font-bold text-slate-800 text-lg">
-                ${visibleTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {visibleTotal.toLocaleString(undefined, { style: 'currency', currency: 'AUD' })}
               </span>
             </div>
             <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${selectedIndices.size > 0 ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white border-slate-200 text-slate-400'}`}>
               <Calculator className="w-4 h-4" />
               <span className="font-medium">
-                 Selected: ${selectedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                 Selected: {selectedTotal.toLocaleString(undefined, { style: 'currency', currency: 'AUD' })}
               </span>
             </div>
           </div>
@@ -234,7 +269,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
                 <th className="px-6 py-4 font-semibold">Description</th>
                 <th className="px-6 py-4 font-semibold">Supplier</th>
                 <th className="px-6 py-4 font-semibold">Project</th>
-                <th className="px-6 py-4 font-semibold text-right">Amount</th>
+                <th className="px-6 py-4 font-semibold text-right">Amount (AUD)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -283,7 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onReset }) =
                         )}
                       </td>
                       <td className="px-6 py-4 text-right font-medium text-slate-900">
-                        ${t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   );
