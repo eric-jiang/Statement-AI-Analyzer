@@ -1,0 +1,5 @@
+{
+  "name": "Statement AI Analyzer",
+  "description": "Intelligent bank statement analyzer using Gemini 2.5 Flash. Upload CSV statements to automatically extract suppliers, categorize by project, and visualize spending.",
+  "requestFramePermissions": []
+}
